@@ -9,7 +9,7 @@ x-common:
     APP_NAME: "Panel Akbar"
     APP_ENV: "production"
     APP_DEBUG: "false"
-    APP_URL: "https://wg5pxr3rw6-8080.app.github.dev"  # ✅ ALAMAT KAMU UDAH BENER!
+    APP_URL: "https://fluffy-parakeet-gxq7p9pxg55pfppxp-8080.github.dev"  # ✅ ALAMAT KAMU UDAH BENER!
 
     DB_CONNECTION: "mysql"
     DB_HOST: "db"
@@ -99,7 +99,7 @@ services:
       DAEMON_ALLOWED_ORIGINS: "*"
       DAEMON_TRUSTED_PROXIES: "*"
       DAEMON_TIMEZONE: "Asia/Jakarta"
-      DAEMON_PANEL_URL: "https://wg5pxr3rw6-8080.app.github.dev" # ✅ DITAMBAH ALAMAT BIAR NYAMBUNG
+      DAEMON_PANEL_URL: "https://fluffy-parakeet-gxq7p9pxg55pfppxp-8080.github.dev" # ✅ DITAMBAH ALAMAT BIAR NYAMBUNG
     volumes:
       - ./daemon:/etc/pterodactyl
       - /var/run/docker.sock:/var/run/docker.sock
