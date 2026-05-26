@@ -1,0 +1,119 @@
+version: '3.8'
+
+x-common:
+  &common
+  image: ghcr.io/pterodactyl/panel:latest
+  user: root
+  environment:
+    &common-env
+    APP_NAME: "Panel Akbar"
+    APP_ENV: "production"
+    APP_DEBUG: "false"
+    APP_URL: "https://wg5pxr3rw6-8080.app.github.dev"  # ✅ ALAMAT KAMU UDAH BENER!
+
+    DB_CONNECTION: "mysql"
+    DB_HOST: "db"
+    DB_PORT: "3306"
+    DB_DATABASE: "panel_akbar"
+    DB_USERNAME: "akbar"                # 👤 USER: akbar
+    DB_PASSWORD: "akbar123"             # 🔑 PASS: akbar123
+    DB_PASSWORD_FILE: ""
+
+    CACHE_DRIVER: "redis"
+    SESSION_DRIVER: "redis"
+    QUEUE_CONNECTION: "redis"
+    REDIS_HOST: "cache"
+    REDIS_PORT: "6379"
+    REDIS_PASSWORD: ""
+
+    MAIL_DRIVER: "smtp"
+    MAIL_HOST: "smtp.mailtrap.io"
+    MAIL_PORT: "2525"
+    MAIL_USERNAME: ""
+    MAIL_PASSWORD: ""
+    MAIL_ENCRYPTION: "tls"
+    MAIL_FROM: "no-reply@akbar.dev"
+    MAIL_FROM_NAME: "Panel Akbar"
+
+    APP_TIMEZONE: "Asia/Jakarta"       # 🇮🇩 WAKTU INDONESIA
+    APP_LOCALE: "id"                   # 🇮🇩 BAHASA INDONESIA
+    APP_FALLBACK_LOCALE: "id"          # ✅ UBAH KE ID BIAR KUKUH
+    APP_KEY: "base64:u7RkFz+GxQzL7bN9vM8wP0eR3tY2uI7oP9aSdFgHjKlZxVcBnMqW"
+
+    TRUSTED_PROXIES: "*"
+    HTTP_SCHEME: "https"
+    APP_CACHE_DRIVER: "redis"           # ✅ DITAMBAH BIAR CEPAT
+    APP_SESSION_DRIVER: "redis"         # ✅ DITAMBAH BIAR GAK LOGOUT SENDIRI
+    DOCKERER_ENDPOINT: "http://daemon:8080"
+    DOCKERER_TOKEN: "akbarrahasia123"  # 🔑 TOKEN SAMA PERSIS
+
+  volumes:
+    - ./panel:/var/www/html
+    - ./panel/storage:/var/www/html/storage
+    - ./panel/bootstrap/cache:/var/www/html/bootstrap/cache
+  restart: always # ✅ DITAMBAH BIAR NYALA LAGI KALAU MATI
+
+services:
+  panel:
+    <<: *common
+    ports:
+      - "8080:80"     # 🔌 PORT UTAMA
+      - "8443:443"    # 🔌 PORT SSL
+    depends_on:
+      - db
+      - cache
+    command: ["apache2-foreground"]
+    healthcheck: # ✅ DITAMBAH BIAR CEK OTOMATIS KALAU MATI
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db:
+    image: mariadb:10.11
+    restart: always
+    environment:
+      MYSQL_DATABASE: "panel_akbar"
+      MYSQL_USER: "akbar"              # 👤 SAMA: akbar
+      MYSQL_PASSWORD: "akbar123"       # 🔑 SAMA: akbar123
+      MYSQL_ROOT_PASSWORD: "akbarroot" # 🔑 PASS ROOT: akbarroot
+    volumes:
+      - ./db:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=256M # ✅ DIKASIH MEMORI BIAR GAK LEMOT
+
+  cache:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - ./redis:/data
+    command: redis-server --appendonly yes --save "" # ✅ BIAR DATA AMAN
+
+  daemon:
+    image: --platform=linux/amd64 ghcr.io/pterodactyl/daemon:latest # ✅ DITAMBAH BIAR GAK ERROR "DENIED"
+    user: root
+    restart: always
+    environment:
+      DAEMON_HTTP_PORT: 8080
+      DAEMON_HTTPS_PORT: 8443
+      DAEMON_TOKEN: "akbarrahasia123" # 🔑 SAMA PERSIS DI ATAS
+      DAEMON_ALLOWED_ORIGINS: "*"
+      DAEMON_TRUSTED_PROXIES: "*"
+      DAEMON_TIMEZONE: "Asia/Jakarta"
+      DAEMON_PANEL_URL: "https://wg5pxr3rw6-8080.app.github.dev" # ✅ DITAMBAH ALAMAT BIAR NYAMBUNG
+    volumes:
+      - ./daemon:/etc/pterodactyl
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/pterodactyl:/tmp/pterodactyl
+      - /var/lib/pterodactyl:/var/lib/pterodactyl
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - DAC_READ_SEARCH
+    ports:
+      - "2022:2022"
+      - "8081:8081"
+    healthcheck: # ✅ DITAMBAH BIAR AMAN
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval:10s
+      timeout:5s
+      retries:3
